@@ -21,6 +21,7 @@ jobs:
       - name: Deploy to VPS
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            # Git clone or pull
             if [ -d mongodb-docker-replica/.git ]; then
               cd mongodb-docker-replica
               git pull origin main
@@ -30,25 +31,27 @@ jobs:
               cd mongodb-docker-replica
             fi
 
-            # Set file permissions for MongoDB keyfile
-            sudo chmod 600 ~/mongodb-docker-replica/mongo-keyfile
-            sudo chown 999:999 ~/mongodb-docker-replica/mongo-keyfile
+            # Create key file (not folder!)
+            if [ ! -f mongo-keyfile ]; then
+              openssl rand -base64 756 > mongo-keyfile
+              chmod 400 mongo-keyfile
+              chown 999:999 mongo-keyfile
+            fi
 
-            # Stop and remove existing containers (if any)
+            # Stop existing containers
             docker compose down || true
 
-            # Build and start containers with the latest changes
+            # Start MongoDB replica containers
             docker compose up -d --build
 
-            # Wait for MongoDB containers to start
+            # Wait for containers to become ready
             sleep 10
 
-            # Check if MongoDB replica set is initialized
-            rs_status=$(docker exec -it mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval "rs.status()" | grep 'not yet initialized')
+            # Check replica set status
+            rs_status=$(docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval "rs.status()" | grep 'not yet initialized')
 
-            # If not initialized, initiate the replica set
             if [[ ! -z "$rs_status" ]]; then
-              docker exec -it mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval '
+              docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval '
                 rs.initiate({
                   _id: "rs0",
                   members: [
@@ -60,9 +63,9 @@ jobs:
               '
             fi
 
-            # Restart MongoDB containers to apply changes
+            # Restart containers just to be sure
             docker restart mongo1 mongo2 mongo3
 
-            # Check the status of the replica set after restart
-            docker exec -it mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval "rs.status()"
+            # Show replica set status
+            docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval "rs.status()"
           EOF
