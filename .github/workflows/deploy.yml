@@ -22,15 +22,23 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
             # Navigate to project directory or clone if it doesn't exist
-            cd mongodb-docker-replica || https://github.com/Abulkalam-Asif/mongodb-docker-replica mongodb-docker-replica
+            if [ ! -d "mongodb-docker-replica" ]; then
+              git clone https://github.com/Abulkalam-Asif/mongodb-docker-replica.git
+            fi
             cd mongodb-docker-replica
 
             # Pull the latest changes
             git pull origin main
 
+            # Ensure MongoDB keyfile exists
+            if [ ! -f "mongo-keyfile" ]; then
+              echo "Error: mongo-keyfile is missing." >&2
+              exit 1
+            fi
+
             # Set file permissions for MongoDB keyfile
-            sudo chmod 600 ~/mongodb-docker-replica/mongo-keyfile
-            sudo chown 999:999 ~/mongodb-docker-replica/mongo-keyfile
+            sudo chmod 600 mongo-keyfile
+            sudo chown 999:999 mongo-keyfile
 
             # Stop and remove existing containers (if any)
             docker compose down || true
@@ -42,11 +50,11 @@ jobs:
             sleep 10
 
             # Check if MongoDB replica set is initialized
-            rs_status=$(docker exec -it mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval "rs.status()" | grep 'not yet initialized')
+            rs_status=$(docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval "rs.status()" | grep 'not yet initialized')
 
             # If not initialized, initiate the replica set
             if [[ ! -z "$rs_status" ]]; then
-              docker exec -it mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval '
+              docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval '
                 rs.initiate({
                   _id: "rs0",
                   members: [
@@ -62,5 +70,5 @@ jobs:
             docker restart mongo1 mongo2 mongo3
 
             # Check the status of the replica set after restart
-            docker exec -it mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval "rs.status()"
+            docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval "rs.status()"
           EOF
