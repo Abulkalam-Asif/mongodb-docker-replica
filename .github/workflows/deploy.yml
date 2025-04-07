@@ -26,7 +26,7 @@ jobs:
               cd mongodb-docker-replica
               git pull origin main
             else
-              rm -rf mongodb-docker-replica
+              sudo rm -rf mongodb-docker-replica
               git clone https://github.com/Abulkalam-Asif/mongodb-docker-replica.git
               cd mongodb-docker-replica
             fi
