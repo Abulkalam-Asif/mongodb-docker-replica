@@ -21,7 +21,9 @@ jobs:
       - name: Deploy to VPS
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-            # Git clone or pull
+            set -e
+
+            echo "🔄 Updating repository..."
             if [ -d mongodb-docker-replica/.git ]; then
               cd mongodb-docker-replica
               git pull origin main
@@ -31,30 +33,32 @@ jobs:
               cd mongodb-docker-replica
             fi
 
-            # Set required environment variables
-            export MONGO_INITDB_ROOT_USERNAME=admin
-            export MONGO_INITDB_ROOT_PASSWORD=supersecret
-            export REPLICA_SET_NAME=rs0
+            echo "🧼 Cleaning up Docker system..."
+            docker compose down -v || true
+            docker system prune -af --volumes || true
 
-            # Create key file (not folder!)
+            echo "🔑 Creating keyfile if not exists..."
             if [ ! -f mongo-keyfile ]; then
               openssl rand -base64 756 > mongo-keyfile
               chmod 400 mongo-keyfile
               chown 999:999 mongo-keyfile
             fi
 
-            # Stop and remove existing containers
-            docker compose down || true
+            echo "📦 Setting environment variables..."
+            export MONGO_INITDB_ROOT_USERNAME=admin
+            export MONGO_INITDB_ROOT_PASSWORD=supersecret
+            export REPLICA_SET_NAME=rs0
 
-            # Start containers with the replica set config
+            echo "🚀 Starting MongoDB replica containers..."
             docker compose up -d --build
 
-            # Wait for containers to become ready
+            echo "⏳ Waiting for containers to be ready..."
             sleep 10
 
-            # Initialize the replica set if not already initialized
+            echo "🔍 Checking replica set initialization..."
             is_initialized=$(docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --quiet --eval "rs.status().ok" || echo "0")
             if [[ "$is_initialized" != "1" ]]; then
+              echo "⚙️ Initializing replica set..."
               docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval '
                 rs.initiate({
                   _id: "rs0",
@@ -68,9 +72,9 @@ jobs:
               sleep 5
             fi
 
-            # Restart containers just to ensure everything is connected properly
-            docker restart mongo1 mongo2 mongo3
+            echo "♻️ Restarting all Mongo containers..."
+            docker restart mongo1 mongo2 mongo3 || true
 
-            # Display replica set status
+            echo "📊 Replica set status:"
             docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval "rs.status()"
           EOF
