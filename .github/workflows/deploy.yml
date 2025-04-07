@@ -21,9 +21,46 @@ jobs:
       - name: Deploy to VPS
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            # Navigate to project directory or clone if it doesn't exist
             cd mongodb-docker-replica || git clone https://github.com/<your-user>/<your-repo>.git mongodb-docker-replica
             cd mongodb-docker-replica
+
+            # Pull the latest changes
             git pull origin main
+
+            # Set file permissions for MongoDB keyfile
+            sudo chmod 600 ~/mongodb-docker-replica/mongo-keyfile
+            sudo chown 999:999 ~/mongodb-docker-replica/mongo-keyfile
+
+            # Stop and remove existing containers (if any)
             docker compose down || true
+
+            # Build and start containers with the latest changes
             docker compose up -d --build
+
+            # Wait for MongoDB containers to start
+            sleep 10
+
+            # Check if MongoDB replica set is initialized
+            rs_status=$(docker exec -it mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval "rs.status()" | grep 'not yet initialized')
+
+            # If not initialized, initiate the replica set
+            if [[ ! -z "$rs_status" ]]; then
+              docker exec -it mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval '
+                rs.initiate({
+                  _id: "rs0",
+                  members: [
+                    { _id: 0, host: "mongo1:27017" },
+                    { _id: 1, host: "mongo2:27017" },
+                    { _id: 2, host: "mongo3:27017" }
+                  ]
+                });
+              '
+            fi
+
+            # Restart MongoDB containers to apply changes
+            docker restart mongo1 mongo2 mongo3
+
+            # Check the status of the replica set after restart
+            docker exec -it mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval "rs.status()"
           EOF

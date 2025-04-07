@@ -1,0 +1,76 @@
+I want to implement a MongoDB project on my own server using Docker. My requirements are as follows:
+
+I need a MongoDB Replica Set with 3 nodes.
+
+The MongoDB database should be containerized and run using Docker (without being hosted directly by MongoDB itself).
+
+I want to be able to access it from outside using a connection string.
+
+That’s it.  + Backup and Recovery Function
+
+
+Project Overview:
+Design and implement a containerized MongoDB solution with a 3-node Replica Set, hosted on your own server. Ensure external accessibility via a connection string. Provide concise documentation and a video (MP4) as evidence of functionality.
+
+User Stories:
+As a developer, I want MongoDB to run in Docker containers, so that the database is isolated and easy to manage.
+
+Acceptance Criteria:
+
+Create Docker Compose files or individual Dockerfiles to automate the setup.
+
+Containers should be lightweight, properly isolated, and configurable.
+
+As a developer, I want a 3-node MongoDB Replica Set, so that the database is highly available and resilient.
+
+Acceptance Criteria:
+
+The Replica Set must initialize correctly and be fully functional (rs.status() confirms the nodes are connected).
+
+Properly configure Primary, Secondary, and Arbiter nodes.
+
+As a user, I want to access the database from external applications, so that I can connect it to my software via a connection string.
+
+Acceptance Criteria:
+
+Provide a working connection string (e.g., mongodb://user:password@host1,host2,host3/?replicaSet=replicaSetName).
+
+Test the external connection and demonstrate successful data access.
+
+As the project owner, I want concise documentation, so that I can understand the setup and perform future maintenance.
+
+Acceptance Criteria:
+
+Include all prerequisites (e.g., OS requirements, Docker version).
+
+Provide a step-by-step setup guide.
+
+Address common troubleshooting scenarios (e.g., network issues).
+
+As the project owner, I want a video demonstration (MP4) of the project’s functionality, so that I can verify the requirements have been fulfilled.
+
+Acceptance Criteria:
+The video should showcase:
+
+Starting Docker containers.
+
+Initializing the Replica Set.
+Accessing the database externally with the provided connection string (e.g., using MongoDB Compass or the mongo shell).
+Additional Requirements:
+Backup & Recovery:
+Implement automated backup options with tools like mongodump or equivalent.
+Document how to restore the database in case of failure.
+Security:
+Configure username/password authentication.
+
+Limit access to trusted IP ranges and enable SSL/TLS encryption.
+Monitoring:
+Provide recommendations for monitoring tools (e.g., Prometheus, Grafana) to track performance metrics.
+
+Include logs for auditing and troubleshooting.
+
+Scaling:
+Ensure the system is extendable to handle more nodes or larger workloads if needed.
+Compatibility:
+Use the latest stable versions of MongoDB and Docker.
+Ensure compatibility with common programming frameworks (e.g., Node.js, Python).
