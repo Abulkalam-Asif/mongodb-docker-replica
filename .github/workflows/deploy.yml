@@ -31,6 +31,11 @@ jobs:
               cd mongodb-docker-replica
             fi
 
+            # Set required environment variables
+            export MONGO_INITDB_ROOT_USERNAME=admin
+            export MONGO_INITDB_ROOT_PASSWORD=supersecret
+            export REPLICA_SET_NAME=rs0
+
             # Create key file (not folder!)
             if [ ! -f mongo-keyfile ]; then
               openssl rand -base64 756 > mongo-keyfile
@@ -38,19 +43,18 @@ jobs:
               chown 999:999 mongo-keyfile
             fi
 
-            # Stop existing containers
+            # Stop and remove existing containers
             docker compose down || true
 
-            # Start MongoDB replica containers
+            # Start containers with the replica set config
             docker compose up -d --build
 
             # Wait for containers to become ready
             sleep 10
 
-            # Check replica set status
-            rs_status=$(docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval "rs.status()" | grep 'not yet initialized')
-
-            if [[ ! -z "$rs_status" ]]; then
+            # Initialize the replica set if not already initialized
+            is_initialized=$(docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --quiet --eval "rs.status().ok" || echo "0")
+            if [[ "$is_initialized" != "1" ]]; then
               docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval '
                 rs.initiate({
                   _id: "rs0",
@@ -61,11 +65,12 @@ jobs:
                   ]
                 });
               '
+              sleep 5
             fi
 
-            # Restart containers just to be sure
+            # Restart containers just to ensure everything is connected properly
             docker restart mongo1 mongo2 mongo3
 
-            # Show replica set status
+            # Display replica set status
             docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval "rs.status()"
           EOF

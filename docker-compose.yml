@@ -9,7 +9,6 @@ services:
       - 27017:27017
     volumes:
       - ./mongo-keyfile:/etc/mongo-keyfile:ro
-      - ./init-replica.sh:/docker-entrypoint-initdb.d/init-replica.sh
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
@@ -26,6 +25,7 @@ services:
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - MONGO_REPLICA_SET_NAME=${REPLICA_SET_NAME}
     command: ["--replSet", "${REPLICA_SET_NAME}", "--keyFile", "/etc/mongo-keyfile"]
     restart: always
 
@@ -38,6 +38,7 @@ services:
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - MONGO_REPLICA_SET_NAME=${REPLICA_SET_NAME}
     command: ["--replSet", "${REPLICA_SET_NAME}", "--keyFile", "/etc/mongo-keyfile"]
     restart: always
 
