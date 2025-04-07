@@ -1,0 +1,15 @@
+stages:
+  - deploy
+
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploying to server"
+    - ssh ubuntu@54.245.215.121 "
+        cd ~/mongodb-docker-replica &&
+        git pull &&
+        docker compose down &&
+        docker compose up -d --build
+      "
+  only:
+    - main
