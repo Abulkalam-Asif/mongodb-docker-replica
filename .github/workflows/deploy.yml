@@ -78,22 +78,26 @@ jobs:
             sleep 30
 
             echo "🔍 Checking replica set initialization..."
-            is_initialized=$(sudo docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --quiet --eval "rs.status().ok" || echo "0")
-            if [ "$is_initialized" != "1" ]; then
+            if ! sudo docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --quiet --eval "rs.status().ok" 2>/dev/null | grep -q 1; then
               echo "⚙️ Initializing replica set..."
               sudo docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --quiet << 'EOM'
-                rs.initiate({
-                  _id: "rs0",
-                  members: [
-                    { _id: 0, host: "mongo1:27017" },
-                    { _id: 1, host: "mongo2:27017" },
-                    { _id: 2, host: "mongo3:27017" }
-                  ]
-                });
+              rs.initiate({
+                _id: "rs0",
+                members: [
+                  { _id: 0, host: "mongo1:27017" },
+                  { _id: 1, host: "mongo2:27017" },
+                  { _id: 2, host: "mongo3:27017" }
+                ]
+              });
               EOM
-              sleep 10
+              echo "🔄 Waiting for replica set to initialize..."
+              sleep 20
+              # Verify initialization
+              sudo docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --quiet --eval "rs.status()"
+            else
+              echo "✅ Replica set already initialized"
             fi
 
-            echo "📊 Replica set status:"
+            echo "📊 Final replica set status:"
             sudo docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --quiet --eval "rs.status()"
           EOF
