@@ -63,7 +63,7 @@ jobs:
               openssl rand -base64 756 > mongo-keyfile
             fi
 
-            chmod 400 mongo-keyfile
+            sudo chmod 400 mongo-keyfile
             sudo chown 999:999 mongo-keyfile
 
             echo "📦 Setting environment variables..."
