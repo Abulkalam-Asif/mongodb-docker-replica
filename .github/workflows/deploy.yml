@@ -37,12 +37,13 @@ jobs:
             docker compose down -v || true
             docker system prune -af --volumes || true
 
-            echo "🔑 Creating keyfile if not exists..."
+            echo "🔑 Ensuring keyfile exists with correct permissions..."
             if [ ! -f mongo-keyfile ]; then
               openssl rand -base64 756 > mongo-keyfile
-              chmod 400 mongo-keyfile
-              chown 999:999 mongo-keyfile
             fi
+
+            chmod 400 mongo-keyfile
+            sudo chown 999:999 mongo-keyfile
 
             echo "📦 Setting environment variables..."
             export MONGO_INITDB_ROOT_USERNAME=admin
@@ -71,9 +72,6 @@ jobs:
               '
               sleep 5
             fi
-
-            echo "♻️ Restarting all Mongo containers..."
-            docker restart mongo1 mongo2 mongo3 || true
 
             echo "📊 Replica set status:"
             docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval "rs.status()"
