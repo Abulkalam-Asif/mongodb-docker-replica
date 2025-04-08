@@ -81,7 +81,7 @@ jobs:
             is_initialized=\$(sudo docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --quiet --eval "rs.status().ok" || echo "0")
             if [[ "\$is_initialized" != "1" ]]; then
               echo "⚙️ Initializing replica set..."
-              sudo docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval '
+              sudo docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --quiet --eval '
                 rs.initiate({
                   _id: "rs0",
                   members: [
@@ -95,6 +95,5 @@ jobs:
             fi
 
             echo "📊 Replica set status:"
-            sudo docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval "rs.status()"
+            sudo docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --quiet --eval "rs.status()"
           EOF
-          echo "✅ Deployment completed successfully!"
