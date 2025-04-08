@@ -36,10 +36,10 @@ jobs:
             echo "📦 Checking if Docker Compose plugin is installed..."
             if ! docker compose version &> /dev/null; then
               echo "📥 Installing Docker Compose plugin..."
-              DOCKER_CONFIG=\${DOCKER_CONFIG:-\$HOME/.docker}
-              mkdir -p \$DOCKER_CONFIG/cli-plugins
-              curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o \$DOCKER_CONFIG/cli-plugins/docker-compose
-              chmod +x \$DOCKER_CONFIG/cli-plugins/docker-compose
+              DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
+              mkdir -p $DOCKER_CONFIG/cli-plugins
+              curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
+              chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
             else
               echo "✅ Docker Compose plugin is already installed."
             fi
@@ -75,23 +75,23 @@ jobs:
             sudo docker compose up -d --build
 
             echo "⏳ Waiting for containers to be ready..."
-            sleep 10
+            sleep 30
 
             echo "🔍 Checking replica set initialization..."
-            is_initialized=\$(sudo docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --quiet --eval "rs.status().ok" || echo "0")
-            if [[ "\$is_initialized" != "1" ]]; then
+            is_initialized=$(sudo docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --quiet --eval "rs.status().ok" || echo "0")
+            if [ "$is_initialized" != "1" ]; then
               echo "⚙️ Initializing replica set..."
-              sudo docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --quiet --eval "
+              sudo docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --quiet << 'EOM'
                 rs.initiate({
-                  _id: 'rs0',
+                  _id: "rs0",
                   members: [
-                    { _id: 0, host: 'mongo1:27017' },
-                    { _id: 1, host: 'mongo2:27017' },
-                    { _id: 2, host: 'mongo3:27017' }
+                    { _id: 0, host: "mongo1:27017" },
+                    { _id: 1, host: "mongo2:27017" },
+                    { _id: 2, host: "mongo3:27017" }
                   ]
                 });
-              "
-              sleep 5
+              EOM
+              sleep 10
             fi
 
             echo "📊 Replica set status:"
