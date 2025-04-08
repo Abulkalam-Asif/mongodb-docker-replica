@@ -1,3 +1,4 @@
+version: '3'
 services:
   mongo1:
     image: mongo:6
@@ -13,7 +14,7 @@ services:
     volumes:
       - ./mongo-keyfile:/etc/mongo-keyfile:ro
     ports:
-      - 27017:27017
+      - "27017:27017"  # Exposing port 27017 for mongo1
 
   mongo2:
     image: mongo:6
@@ -28,6 +29,8 @@ services:
              --keyFile /etc/mongo-keyfile
     volumes:
       - ./mongo-keyfile:/etc/mongo-keyfile:ro
+    ports:
+      - "27018:27017"  # Exposing port 27018 for mongo2
 
   mongo3:
     image: mongo:6
@@ -42,3 +45,5 @@ services:
              --keyFile /etc/mongo-keyfile
     volumes:
       - ./mongo-keyfile:/etc/mongo-keyfile:ro
+    ports:
+      - "27019:27017"  # Exposing port 27019 for mongo3
