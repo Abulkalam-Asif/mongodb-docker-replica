@@ -47,3 +47,18 @@ services:
       - ./mongo-keyfile:/etc/mongo-keyfile:ro
     ports:
       - "27019:27017"  # Exposing port 27019 for mongo3
+
+  # Backup service to take periodic backups of the MongoDB replica set
+  backup:
+    image: mongo:6
+    container_name: mongo_backup
+    entrypoint: ["sh", "-c", "while true; do mongodump --uri='mongodb://admin:supersecret@mongo1:27017,mongo2:27018,mongo3:27019/?replicaSet=rs0' --out /backup/$(date +\%F); sleep 86400; done"]
+    volumes:
+      - ./backups:/backup  # Mount the host machine's backup directory to the container
+    restart: always
+    networks:
+      - mongo_network
+
+networks:
+  mongo_network:
+    driver: bridge
