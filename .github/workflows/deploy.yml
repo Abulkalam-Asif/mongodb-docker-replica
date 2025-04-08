@@ -55,8 +55,8 @@ jobs:
             fi
 
             echo "🧼 Cleaning up Docker system..."
-            docker compose down -v || true
-            docker system prune -af --volumes || true
+            sudo docker compose down -v || true
+            sudo docker system prune -af --volumes || true
 
             echo "🔑 Ensuring keyfile exists with correct permissions..."
             if [ ! -f mongo-keyfile ]; then
@@ -72,16 +72,16 @@ jobs:
             export REPLICA_SET_NAME=rs0
 
             echo "🚀 Starting MongoDB replica containers..."
-            docker compose up -d --build
+            sudo docker compose up -d --build
 
             echo "⏳ Waiting for containers to be ready..."
             sleep 10
 
             echo "🔍 Checking replica set initialization..."
-            is_initialized=\$(docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --quiet --eval "rs.status().ok" || echo "0")
+            is_initialized=\$(sudo docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --quiet --eval "rs.status().ok" || echo "0")
             if [[ "\$is_initialized" != "1" ]]; then
               echo "⚙️ Initializing replica set..."
-              docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval '
+              sudo docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval '
                 rs.initiate({
                   _id: "rs0",
                   members: [
@@ -95,5 +95,6 @@ jobs:
             fi
 
             echo "📊 Replica set status:"
-            docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval "rs.status()"
+            sudo docker exec mongo1 mongosh -u admin -p supersecret --authenticationDatabase admin --eval "rs.status()"
           EOF
+          echo "✅ Deployment completed successfully!"
